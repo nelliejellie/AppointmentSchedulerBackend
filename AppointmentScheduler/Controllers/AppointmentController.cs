@@ -33,7 +33,7 @@ namespace AppointmentScheduler.Controllers
         }
 
         [HttpPost]
-        [Route("AllAppointments")]
+        [Route("AddAppointment")]
         public async Task<IActionResult> CreateAppointment([FromForm]AppointmentRequestDto appointmentRequestDto, [FromForm]string name)
         {
             var user = await _userRepository.GetUserByName(name);
