@@ -19,9 +19,11 @@ namespace AppointmentScheduler
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private readonly IWebHostEnvironment _env;
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
             Configuration = configuration;
+            _env = env;
         }
 
         public IConfiguration Configuration { get; }
@@ -31,7 +33,14 @@ namespace AppointmentScheduler
         {
 
             services.AddControllers();
-            services.AddDbContext<AppDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("Default")));
+            if (_env.IsDevelopment())
+            {
+                services.AddDbContext<AppDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("default")));
+            }
+            else
+            {
+                services.AddDbContext<AppDbContext>(options => options.UseNpgsql(Configuration.GetConnectionString("PostGreSql")));
+            }
             services.AddScoped<UserRepository>();
             services.AddScoped<AppointmentRepository>();
             services.AddCors(options => options.AddDefaultPolicy(
@@ -45,14 +54,14 @@ namespace AppointmentScheduler
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, AppDbContext database)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "AppointmentScheduler v1"));
-            }
+            
+            
+            app.UseDeveloperExceptionPage();
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "AppointmentScheduler v1"));
+            
 
             app.UseHttpsRedirection();
 
@@ -63,6 +72,7 @@ namespace AppointmentScheduler
 
             app.UseAuthorization();
 
+            database.Database.EnsureCreated();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
